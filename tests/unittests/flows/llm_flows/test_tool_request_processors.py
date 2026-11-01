@@ -21,6 +21,7 @@ from google.adk.agents.invocation_context import InvocationContext
 from google.adk.agents.llm_agent import Agent
 from google.adk.events.event import Event
 from google.adk.flows.llm_flows._base_llm_processor import BaseLlmRequestProcessor
+from google.adk.flows.llm_flows.auto_flow import AutoFlow
 from google.adk.flows.llm_flows.base_llm_flow import BaseLlmFlow
 from google.adk.flows.llm_flows.prompt import _dynamic_instructions
 from google.adk.flows.llm_flows.single_flow import SingleFlow
@@ -74,6 +75,18 @@ def test_default_tool_request_processors_are_ordered():
       _agent_tools.request_processor,
       _dynamic_instructions.request_processor,
   ]
+
+
+@pytest.mark.parametrize('flow_class', [SingleFlow, AutoFlow])
+def test_toolset_auth_runs_once_before_resumed_confirmation(flow_class):
+  flow = flow_class()
+  processors = [*flow.request_processors, *flow.tool_request_processors]
+  names = [processor.name for processor in processors]
+
+  assert names.count('toolset_auth') == 1
+  assert names.index('auth') < names.index('toolset_auth')
+  assert names.index('toolset_auth') < names.index('request_confirmation')
+  assert names.index('toolset_auth') < names.index('agent_tools')
 
 
 @pytest.mark.asyncio

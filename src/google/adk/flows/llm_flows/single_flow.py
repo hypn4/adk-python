@@ -101,4 +101,8 @@ class SingleFlow(BaseLlmFlow):
   def __init__(self) -> None:
     super().__init__()
     self.request_processors += _create_request_processors()
+    # Confirmation may discover MCP tools before the normal tool-processing
+    # phase. Resolve invocation-scoped credentials first on a fresh Runner.
+    toolset_auth = self.remove_request_processor('toolset_auth')
+    self.insert_request_processor_before('request_confirmation', toolset_auth)
     self.response_processors += _create_response_processors()
